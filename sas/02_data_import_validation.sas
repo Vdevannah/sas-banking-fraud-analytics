@@ -1,3 +1,5 @@
+ods pdf file="/home/u64646496/sasuser.v94/phase2_validation_report.pdf"
+        style=journal;
 /* ==========================================
    SAS Banking Fraud Analytics
    Phase 2: Import Credit Card Transactions
@@ -126,3 +128,6 @@ proc sql;
                  then 1 else 0 end) as invalid_flags
     from work.creditcard_clean;
 quit;
+
+ods pdf close;
+
