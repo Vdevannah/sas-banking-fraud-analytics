@@ -1,3 +1,6 @@
+/* Prerequisite: run sas/00_setup.sas in this session
+   (assigns the permanent FRAUD library). */
+
 ods pdf file="/home/u64646496/sasuser.v94/phase2_validation_report.pdf"
         style=journal;
 /* ==========================================
@@ -130,4 +133,11 @@ proc sql;
 quit;
 
 ods pdf close;
+
+/* Phase 2: Save the validated dataset to the permanent
+   FRAUD library so Phase 4 can run in a later session. */
+
+data fraud.creditcard_clean;
+    set work.creditcard_clean;
+run;
 

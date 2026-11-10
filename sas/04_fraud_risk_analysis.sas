@@ -1,3 +1,6 @@
+/* Prerequisites: run sas/00_setup.sas in this session, and
+   Phase 2 at least once (creates FRAUD.CREDITCARD_CLEAN). */
+
 /* Start Phase 4 consolidated report */
 
 ods pdf file="/home/u64646496/sasuser.v94/phase4_fraud_risk_report.pdf"
@@ -11,7 +14,7 @@ ods pdf file="/home/u64646496/sasuser.v94/phase4_fraud_risk_report.pdf"
 /* Create transaction-level risk indicators */
 
 data work.creditcard_risk;
-    set work.creditcard_clean;
+    set fraud.creditcard_clean;
 
     /* Rule 1: Zero-amount transactions */
     if Amount = 0 then risk_zero_amount = 1;
@@ -197,15 +200,7 @@ title;
 
 /* Phase 4 - Step 5: Compare Rule Performance */
 
-/* Add combined rule performance to comparison */
-
-data work.all_rule_comparison;
-    set work.rule_comparison;
-
-    output;
-run;
-
-/* Append combined rule metrics */
+/* Format combined rule metrics to match the rule table */
 
 data work.combined_rule;
     length rule_name $25;
@@ -215,12 +210,17 @@ data work.combined_rule;
     rule_name = "Combined Rule";
     total_alerts = TP + FP;
 
-    keep rule_name total_alerts TP FP FN
+    keep rule_name total_alerts TP FP FN TN
          precision recall false_positive_rate;
 run;
 
-proc append base=work.all_rule_comparison
-            data=work.combined_rule force;
+/* Build the four-rule comparison in one DATA step.
+   The dataset is recreated from scratch on every run, so
+   rerunning Phase 4 never duplicates the Combined Rule. */
+
+data work.all_rule_comparison;
+    set work.rule_comparison
+        work.combined_rule;
 run;
 
 /* Convert metrics into long format for charting */
@@ -261,3 +261,27 @@ title;
 /* Close Phase 4 consolidated report */
 
 ods pdf close;
+
+/* Verify (Results tab only, not in the PDF): exactly four
+   rules, Combined Rule last with TP=124 FP=22493 FN=368
+   TN=261822, precision 0.55, recall 25.20. */
+
+proc print data=work.all_rule_comparison noobs;
+    var rule_name total_alerts TP FP FN TN
+        precision recall false_positive_rate;
+
+    title "All Fraud Risk Rules (Individual and Combined)";
+run;
+
+title;
+
+/* Phase 4 - Step 6: Save datasets required by Phase 5
+   to the permanent FRAUD library. */
+
+data fraud.creditcard_risk;
+    set work.creditcard_risk;
+run;
+
+data fraud.all_rule_comparison;
+    set work.all_rule_comparison;
+run;

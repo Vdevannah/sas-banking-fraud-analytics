@@ -1,1 +1,8 @@
 .DS_Store
+
+# Raw datasets and SAS data files
+*.csv
+*.sas7bdat
+
+# Python cache
+__pycache__/
